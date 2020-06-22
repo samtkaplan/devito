@@ -881,6 +881,7 @@ class Operator(Callable):
             self._lib = self._compiler.load(self._soname)
             self._lib.name = self._soname
 
+
 # Misc helpers
 
 
