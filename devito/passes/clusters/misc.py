@@ -46,6 +46,7 @@ class Lift(Queue):
                 processed.append(c)
                 continue
 
+            # Union of processed clusters and incoming clusters
             impacted = set(processed) | set(clusters[n+1:])
 
             # None of the Functions appearing in a lifted Cluster can be written to
@@ -60,17 +61,35 @@ class Lift(Queue):
                 continue
 
             # Catch symbolic_bounds that are written
-            sbounds = set()
-            import pdb;pdb.set_trace()
-
+            # Store the symbolic bounds of dimensions in impacted clusters
+            imp_bounds = set()
+            # Store the free symbols of expressions in impacted clusters
+            imp_free_symbols = set()
             for imp in impacted:
+                imp_free_symbols.update(imp.free_symbols)
                 for i in imp.ispace.dimensions:
-                    sbounds.update([i.symbolic_min, i.symbolic_max])
+                    imp_bounds.update([i.symbolic_min, i.symbolic_max])
 
-            if any(swrites & sbounds):
+            # Prevent lifting if cluster's scope writes affects
+            # the symbolic bounds of impacted clusters
+            if any(swrites & imp_bounds):
                 processed.append(c)
                 continue
 
+            # Catch cases where free_symbols of impacted clusters read from affected
+            # symbolic_bounds
+            # Store the symbolic bounds of dimensions in the cluster's Scope's reads
+            sreadsbounds = set()
+            sreads = {f for f in c.scope.reads if f.is_Dimension}
+            for i in sreads:
+                sreadsbounds.update([i.symbolic_min, i.symbolic_max])
+
+            # Are we reading inside a loop that has dynamic bounds?
+            if any(sreadsbounds & imp_free_symbols):
+                processed.append(c)
+                continue
+
+            # If we reach here, it means that Cluster will be lifted
             # Contract iteration and data spaces for the lifted Cluster
             key = lambda d: d not in hope_invariant
             ispace = c.ispace.project(key).reset()
