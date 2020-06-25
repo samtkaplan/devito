@@ -89,6 +89,11 @@ class Lift(Queue):
                 processed.append(c)
                 continue
 
+            if any(swrites & imp_free_symbols):
+                processed.append(c)
+                continue
+
+            # import pdb; pdb.set_trace()
             # If we reach here, it means that Cluster will be lifted
             # Contract iteration and data spaces for the lifted Cluster
             key = lambda d: d not in hope_invariant
