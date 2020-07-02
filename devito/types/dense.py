@@ -961,6 +961,9 @@ class Function(DiscreteFunction):
         # Dynamically add derivative short-cuts
         self._fd = generate_fd_shortcuts(self)
 
+        # Check if defined on a subdomain
+        
+
         # Flag whether it is a parameter or a variable.
         # Used at operator evaluation to evaluate the Function at the
         # variable location (i.e. if the variable is staggered in x the
