@@ -349,7 +349,7 @@ class SubDomain(object):
             raise ValueError("SubDomain requires a `name`")
         self._dimensions = None
 
-    def __subdomain_finalize__(self, dimensions, shape, **kwargs):
+    def __subdomain_finalize__(self, dimensions, shape, distributor=None, **kwargs):
         # Create the SubDomain's SubDimensions
         sub_dimensions = []
         sdshape = []
@@ -396,6 +396,38 @@ class SubDomain(object):
         # Compute the SubDomain shape
         self._shape = tuple(sdshape)
 
+        # TODO: Tidy + generalize
+        # Local shape for distributed cases
+        if distributor and distributor.is_parallel:
+            shape_local = []
+            for v, d in zip(self.define(dimensions).values(), distributor.decomposition):
+                if isinstance(v, Dimension):
+                    shape_local.append(len(d.loc_abs_numb))
+                else:
+                    try:
+                        side, tl, tr = v
+                        #from IPython import embed; embed()
+                        ls = len(d.loc_abs_numb)
+                        minc = d.glb_min + tl
+                        maxc = d.glb_max - tr
+                        l = d.index_glb_to_loc(tl, LEFT)
+                        r = d.index_glb_to_loc(tr, RIGHT)
+                        if d.loc_abs_min > maxc:
+                            shape_local.append(0)
+                        elif d.loc_abs_max < minc:
+                            shape_local.append(0)
+                        else:
+                            if l is None:
+                                l = 0;
+                            if r is None:
+                                r = 0;
+                            shape_local.append(ls-l-r)
+                    except ValueError:
+                        raise NotImplementedError
+            self._shape_local = tuple(shape_local)
+        else:
+            self._shape_local = self._shape
+
     def __eq__(self, other):
         if not isinstance(other, SubDomain):
             return False
@@ -420,6 +452,10 @@ class SubDomain(object):
     @property
     def shape(self):
         return self._shape
+
+    @property
+    def shape_local(self):
+        return self._shape_local
 
     def define(self, dimensions):
         """
