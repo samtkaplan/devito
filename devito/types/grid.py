@@ -411,6 +411,7 @@ class SubDomain(object):
                 if isinstance(v, Dimension):
                     shape_local.append(len(d.loc_abs_numb))
                     access_map.update({v: v})
+                # TODO: Fuse
                 else:
                     try:
                         side, tl, tr = v
@@ -431,7 +432,30 @@ class SubDomain(object):
                             shape_local.append(ls-l-r)
                         access_map.update({dim: dim-l if l else dim})
                     except ValueError:
-                        raise NotImplementedError
+                        side, t = v
+                        if side == 'left':
+                            ls = len(d.loc_abs_numb)
+                            minc = d.glb_min
+                            maxc = d.glb_max - (ls-t)
+                            l = d.index_glb_to_loc(0, LEFT)
+                            r = d.index_glb_to_loc(ls-t, RIGHT)
+                        elif side == 'right':
+                            ls = len(d.loc_abs_numb)
+                            minc = d.glb_min + (ls-t)
+                            maxc = d.glb_max
+                            l = d.index_glb_to_loc(ls-t, LEFT)
+                            r = d.index_glb_to_loc(0, RIGHT)
+                        if d.loc_abs_min > maxc:
+                            shape_local.append(0)
+                        elif d.loc_abs_max < minc:
+                            shape_local.append(0)
+                        else:
+                            if l is None:
+                                l = 0
+                            if r is None:
+                                r = 0
+                            shape_local.append(ls-l-r)
+                        access_map.update({dim: dim-l if l else dim})
             self._shape_local = tuple(shape_local)
         else:
             self._shape_local = self._shape
