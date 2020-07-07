@@ -429,7 +429,7 @@ class SubDomain(object):
                             if r is None:
                                 r = 0
                             shape_local.append(ls-l-r)
-                        access_map.update({dim: dim-l})
+                        access_map.update({dim: dim-l if l else dim})
                     except ValueError:
                         raise NotImplementedError
             self._shape_local = tuple(shape_local)
