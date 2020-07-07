@@ -1000,7 +1000,6 @@ class Function(DiscreteFunction):
             return self.subs(mapper)
         return self
 
-    # TODO: Update this - the subdomain dimensions should be pulled here
     @classmethod
     def __indices_setup__(cls, **kwargs):
         grid = kwargs.get('grid')
@@ -1042,13 +1041,14 @@ class Function(DiscreteFunction):
             if shape is None:
                 raise TypeError("Need either `grid` or `shape`")
         elif shape is None:
-            if dimensions is not None and dimensions != (grid.dimensions or subdomain.dimensions):
+            if dimensions is not None and dimensions != (grid.dimensions or
+                                                         subdomain.dimensions):
                 raise TypeError("Need `shape` as not all `dimensions` are in `grid`")
             # TODO: Fix this:
             if subdomain:
                 shape = subdomain.shape_local
             else:
-                shape = self._domain.shape_local
+                shape = grid.shape_local
         elif dimensions is None:
             raise TypeError("`dimensions` required if both `grid` and "
                             "`shape` are provided")
